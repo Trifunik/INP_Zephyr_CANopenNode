@@ -15,3 +15,6 @@ Done
 
 Todo
 ****
+- Enable LSS
+- Create a I2C slave on the Raspi and build a sensor simulator
+- Read out the simulated sensor
