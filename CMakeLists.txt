@@ -11,3 +11,4 @@ project(CANopen)
 
 target_sources(app PRIVATE src/main.c objdict/CO_OD.c)
 zephyr_include_directories(objdict)
+zephyr_compile_definitions(CO_NO_TIME=CO_NO_TS)

@@ -13,6 +13,13 @@ Done
 - Added devicetree overlay for CAN (TWAI) for M5Stack Atom Lite target.
 
 
+NOTE - Modifying the Object Dictionary
+**************************************
+The version of the EDS editor that is currently used in the CANopen implementation of Zeyphr has a small bug.
+The define CO_NO_TIME is written as CO_NO_TS. As suggested in `issue #33149 <https://github.com/zephyrproject-rtos/zephyr/issues/33149>`_, I have added zephyr_compile_definitions(CO_NO_TIME=CO_NO_TS) to the CMakeLists.txt.
+
+
+
 Todo
 ****
 - Enable LSS
