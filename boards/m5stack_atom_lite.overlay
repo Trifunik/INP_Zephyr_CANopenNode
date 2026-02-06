@@ -1,14 +1,31 @@
-&twai {
+/ {
+    aliases {
+        green-led = &green_led;
+		red-led = &red_led;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        green_led: d22 {
+            gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+        };
+        red_led: d19 {
+            gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};
+
+    &twai {
         status = "okay";
         pinctrl-0 = <&twai_default>;
         pinctrl-names = "default";
         bus-speed = <125000>;
-    
+
         can-transceiver {
             max-bitrate = <1000000>;
         };
     };
-    
+
     &pinctrl {
         twai_default: twai_default {
             group1 {
