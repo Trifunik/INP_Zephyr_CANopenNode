@@ -10,6 +10,8 @@
 #include <zephyr/settings/settings.h>
 #include <canopennode.h>
 
+#include <zephyr/drivers/hwinfo.h>
+
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
@@ -34,6 +36,21 @@ struct led_indicator {
 };
 
 static uint32_t counter;
+
+void print_id(void) 
+{
+	uint8_t array[8];
+
+	hwinfo_get_device_id(array, 8);
+
+	for(int i = 0; i < 8; i++) {
+		LOG_INF("array[%i] %x",i, array[i]);
+	}
+
+	
+}
+
+
 
 /**
  * @brief Callback for setting LED indicator state.
@@ -203,6 +220,11 @@ int main(void)
 	uint16_t timeout;
 	uint32_t elapsed;
 	int64_t timestamp;
+
+	uint8_t identity[5] = { 0xaa, 0xbb, 0xcc, 0xdd};
+
+
+
 #ifdef CONFIG_CANOPENNODE_STORAGE
 	int ret;
 #endif /* CONFIG_CANOPENNODE_STORAGE */
@@ -212,6 +234,8 @@ int main(void)
 		LOG_ERR("CAN interface not ready");
 		return 0;
 	}
+
+	print_id();
 
 #ifdef CONFIG_CANOPENNODE_STORAGE
 	ret = settings_subsys_init();
@@ -234,14 +258,35 @@ int main(void)
 
 	while (reset != CO_RESET_APP) {
 		elapsed =  0U; /* milliseconds */
+		
+		//err = CO_Init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
 
-		err = CO_init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
+		err = CO_new();
+		if (err) {
+			return err;
+		}
+
+		err = CO_CANinit(&can, CAN_BITRATE);
+		if (err) {
+			CO_delete(&can);
+			return err;
+		}
+
+		err = CO_LSSinit(CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
 		if (err != CO_ERROR_NO) {
-			LOG_ERR("CO_init failed (err = %d)", err);
+			LOG_ERR("CO_LSSinit failed (err = %d)", err);
 			return 0;
 		}
 
+		err = CO_CANopenInit(CONFIG_CANOPEN_NODE_ID);
+		if (err) {
+			CO_delete(&can);
+			return err;
+		}
+
 		LOG_INF("CANopen stack initialized");
+
+		
 
 #ifdef CONFIG_CANOPENNODE_STORAGE
 		canopen_storage_attach(CO->SDO[0], CO->em);
@@ -250,6 +295,8 @@ int main(void)
 		config_leds(CO->NMT);
 		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
 				odf_2102, NULL, 0U, 0U);
+
+		// TODO: Add here CO_OD_configure with OD_1018_4_identity_serialNumber
 
 		if (IS_ENABLED(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD)) {
 			canopen_program_download_attach(CO->NMT, CO->SDO[0],
@@ -262,6 +309,8 @@ int main(void)
 			timeout = 1U; /* default timeout in milliseconds */
 			timestamp = k_uptime_get();
 			reset = CO_process(CO, (uint16_t)elapsed, &timeout);
+
+			
 
 			if (reset != CO_RESET_NOT) {
 				break;
